@@ -20,8 +20,9 @@
 using System;
 using System.Collections.Generic;
 using System.Net;
+using System.Net.Http;
 using System.Text;
-
+using System.Threading.Tasks;
 using Aliyun.Acs.Core.Http;
 
 using Xunit;
@@ -75,6 +76,27 @@ namespace Aliyun.Acs.Core.Tests.Units.Http
             var httpWebRequest = HttpResponse.GetWebRequest(request);
 
             Assert.NotNull(httpWebRequest);
+        }
+
+        [Fact]
+        public async Task UseHttpClient()
+        {
+            HttpResponse.UseHttpClient(_ => new HttpClientHandler());
+
+            try
+            {
+                var request = HttpRequestTest.SetContent();
+                request.SetHttpsInsecure(true);
+
+                await Assert.ThrowsAsync<NotSupportedException>(() => HttpResponse.GetResponseAsync(request));
+            }
+            finally
+            {
+
+                HttpResponse.UseHttpWebRequest();
+            }
+
+            GetWebRequestWithIgnoreCertificate();
         }
 
         [Fact]

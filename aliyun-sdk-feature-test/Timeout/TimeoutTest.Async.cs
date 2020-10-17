@@ -18,6 +18,7 @@
  */
 
 using System;
+using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using Aliyun.Acs.Core;
@@ -35,22 +36,31 @@ namespace Aliyun.Acs.Feature.Test.Timeout
         [Fact]
         public async Task TestConnectTimeoutWithException()
         {
-            var request = new HttpRequest("https://alibaba.great");
-            request.Method = MethodType.GET;
-            request.SetConnectTimeoutInMilliSeconds(1);
+            HttpResponse.UseHttpClient(_ => new HttpClientHandler());
 
-            var exception = await Assert.ThrowsAsync<ClientException>(() => HttpResponse.GetResponseAsync(request));
-
-            Assert.NotNull(exception.Message);
-
-            request = new HttpRequest("https://alibaba.great");
-            request.Method = MethodType.GET;
-
-            using (var cts = new CancellationTokenSource(10))
+            try
             {
-                exception = await Assert.ThrowsAsync<ClientException>(() => HttpResponse.GetResponseAsync(request, cts.Token));
+                var request = new HttpRequest("https://alibaba.great");
+                request.Method = MethodType.GET;
+                request.SetConnectTimeoutInMilliSeconds(1);
+
+                var exception = await Assert.ThrowsAsync<ClientException>(() => HttpResponse.GetResponseAsync(request));
 
                 Assert.NotNull(exception.Message);
+
+                request = new HttpRequest("https://alibaba.great");
+                request.Method = MethodType.GET;
+
+                using (var cts = new CancellationTokenSource(10))
+                {
+                    exception = await Assert.ThrowsAsync<ClientException>(() => HttpResponse.GetResponseAsync(request, cts.Token));
+
+                    Assert.NotNull(exception.Message);
+                }
+            }
+            finally
+            {
+                HttpResponse.UseHttpWebRequest();
             }
         }
 
